@@ -68,23 +68,23 @@ const serialize_symbol = s => {
 	if (isObject(s)) {
 		const { data } = s
 		const children = isArray(data) ? data.map(serialize_symbol).join(' ') : serialize_symbol(data)
-		return out = '(' + s.type + ' ' + children + ')'
+		return out = '(' + s.type.blue.bold + ' ' + children + ')'
 	} else if (isArray(s)) {
 		return s.map(serialize_symbol).join('\n')
 	} else {
-		return s
+		return String(s).red.bold
 	}
 }
 const serialize_action = a => {
 	switch (a.type) {
 		case SHIFT:
-			return `SHIFT ${ a.state }`.green
+			return `SHIFT ${ a.state }`.green.bold
 		case REDUCE:
-			return `REDUCE ${ a.rule }`.yellow
+			return `REDUCE ${ a.rule }`.yellow.bold
 		case ACCEPT:
-			return 'ACCEPT'.cyan
+			return 'ACCEPT'.cyan.bold
 		case ERROR:
-			return 'ERROR'.red
+			return 'ERROR'.red.bold
 	}
 }
 const dump = (n, x) => (log(n), debug(x))
@@ -99,9 +99,8 @@ const parse = (rules, table, input) => {
 	let candidate = input[0]
 
 	while (i < input.length) {
-		log('----'.white)
 		log('SYMBOLS'.white)
-		log(symbols.map(serialize_symbol).join('\n'))
+		if (symbols.length > 0) log(symbols.map(serialize_symbol).join('\n'))
 		log('STATES'.white, states.join(' '))
 
 		const state = top(states)
@@ -145,8 +144,8 @@ const parse = (rules, table, input) => {
 				throw new Error('unrecognized action')
 		}
 
-		log('----'.white)
-		console.log()
+		log()
+		log()
 	}
 }
 
