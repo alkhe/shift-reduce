@@ -47,6 +47,7 @@ const table = [
 	[r(2), r(2), r(2), r(2), r(2), r(2)], // 6
 	[r(3), r(3), r(3), r(3), r(3), r(3)]  // 7
 ]
+// parser table for addition and multiplication expressions, operator precedence-aware
 
 // input : [Symbol]
 const input = [
@@ -59,6 +60,7 @@ const input = [
 	['NUM', 4],
 	['EOF', '$']
 ].map(tuple => symbol(...tuple))
+// 1 + 2 * 3 + 4
 
 const log = console.log.bind(console)
 const debug = x => console.dir(x, { depth: null })
