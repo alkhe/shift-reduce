@@ -28,13 +28,18 @@ const alphabet = {
 
 const symbol = (type, data) => ({ type, data })
 
+const rules = require('./rules')
+/*
 const rules = [
 	{ size: 3, lhs: 'SUM' },
 	{ size: 1, lhs: 'SUM' },
 	{ size: 3, lhs: 'PRODUCT' },
 	{ size: 1, lhs: 'PRODUCT' }
 ]
+*/
 
+const table = require('./table')
+/*
 // table : [[Action]]
 const table = [
 	//+  |  *  |  n  |  $  |  S  |  P  |
@@ -48,6 +53,7 @@ const table = [
 	[r(3), r(3), r(3), r(3), r(3), r(3)]  // 7
 ]
 // parser table for addition and multiplication expressions, operator precedence-aware
+*/
 
 // input : [Symbol]
 const input = [
