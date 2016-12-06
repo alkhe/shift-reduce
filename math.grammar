@@ -1,0 +1,11 @@
+Sum
+	Sum plus Product
+	Product
+
+Product
+	Product times num
+	num
+
+plus \+
+times \*
+num [0-9]+
