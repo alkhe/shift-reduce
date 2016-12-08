@@ -57,10 +57,11 @@ const make_edge = (left, right) => `${ left }>${ right }`
 
 // Progression : (RuleIndex, ProductionIndex, SymbolIndex)
 // Production : (RuleIndex, ProductionIndex)
+
+const edge_set = new Set
+
 const progressions_to_edges = (groups, progs) => {
 	const serial = serialize_progressions(progs)
-
-	log('BASEPROG'.yellow, progs)
 
 	let next_progs = progs
 	const symbols = new Set
@@ -89,29 +90,41 @@ const progressions_to_edges = (groups, progs) => {
 		next_progs = additional_progs
 	}
 
+	const [finished, unfinished] = separate_progressions(groups, progs)
 	const paths = initialize_paths(symbols)
 
-	for (const prog of progs) {
+	for (const prog of unfinished) {
 		const { rule, production, symbol } = prog
 		const s = groups[rule].productions[production][symbol]
 
 		paths.get(s).push(increment_progression(prog))
 	}
 
-	log('PATHS'.cyan, paths)
-	let edges = []
+	const finished_length = finished.length
+	if (finished_length > 1) throw new Error('shift-reduce conflict')
 
-	for (const [symbol, next_progs] of paths) {
-		const [next_serial, next_edges] = progressions_to_edges(groups, next_progs)
-		edges = edges.concat(make_edge(serial, next_serial)).concat(next_edges)
+	let edges = []
+	if (finished_length === 1) {
+		const finished_edge = make_edge(serial, 'E')
+		if (!edge_set.has(finished_edge)) {
+			edge_set.add(finished_edge)
+			edges.push(finished_edge)
+		}
 	}
 
-	log('SERIAL'.green, serial)
+	for (const [symbol, next_progs] of paths) {
+		const next_edge = make_edge(serial, serialize_progressions(next_progs))
+		if (!edge_set.has(next_edge)) {
+			edge_set.add(next_edge)
+			const [, next_edges] = progressions_to_edges(groups, next_progs)
+			edges = edges.concat(next_edge, next_edges)
+		}
+	}
 
 	return [serial, edges]
 }
 
-const edges = progressions_to_edges(
+const [, edges] = progressions_to_edges(
 	logical_groups,
 	logical_groups[0].productions.map((_, i) => ({
 		rule: 0,
@@ -120,4 +133,6 @@ const edges = progressions_to_edges(
 	}))
 )
 
+log('ELEN'.green, edges.length)
+log('UNIQUE ELEN'.green, Array.from(new Set(edges)).length)
 log('EDGES'.green, edges)

@@ -9,7 +9,7 @@ const type_to_typeid = {
 	TERMINAL: TERMINAL_ID
 }
 
-const ACCEPT_RULE = 'accept'
+const ACCEPT_RULE = 'Accept'
 const EOF_RULE = 'eof'
 
 // takes first rule and adds a new rule with the first rule in a singleton as its only production
