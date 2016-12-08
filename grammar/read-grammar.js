@@ -1,10 +1,7 @@
-const EMPTY = 'EMPTY'
-const NONTERMINAL = 'NONTERMINAL'
-const TERMINAL = 'TERMINAL'
+const { NONTERMINAL_TAG, TERMINAL_TAG, ACCEPT_RULE, EOF_RULE } = require('./constants')
+const EMPTY_TAG = 'EMPTY'
 
-const EMPTY_GROUP = {
-	type: EMPTY
-}
+const EMPTY_GROUP = { type: EMPTY_TAG }
 
 // split string by line
 const lines = s => s.split(/\n+/)
@@ -18,7 +15,7 @@ const push_line = (groups, current_group, line) => {
 	const is_production = first_char === '\t'
 
 	switch (current_group.type) {
-		case EMPTY: {
+		case EMPTY_TAG: {
 			// production must be added to a nonterminal parent
 			if (is_production) throw new Error('stray production')
 
@@ -26,20 +23,20 @@ const push_line = (groups, current_group, line) => {
 			if (first_char === first_char.toLowerCase()) { // specifically, a terminal rule
 				const [name, match] = words(line)
 				groups.push({
-					type: TERMINAL,
+					type: TERMINAL_TAG,
 					name,
 					match
 				})
 			} else { // specifically, a nonterminal rule
 				return {
-					type: NONTERMINAL,
+					type: NONTERMINAL_TAG,
 					name: line.trimRight(),
 					productions: []
 				}
 			}
 			break
 		}
-		case NONTERMINAL:
+		case NONTERMINAL_TAG:
 			if (is_production) {
 				current_group.productions.push(words(line.trim()))
 			} else {
@@ -66,4 +63,20 @@ const source_lines_to_readable_groups = lines => {
 	return groups
 }
 
-module.exports = source => source_lines_to_readable_groups(lines(source.trim()))
+// takes first rule and adds a new rule with the first rule in a singleton as its only production
+const augment_groups = groups => {
+	if (groups.findIndex(g => g.name === ACCEPT_RULE) === -1) {
+		groups = [{
+			type: NONTERMINAL_TAG,
+			name: ACCEPT_RULE,
+			productions: [[groups[0].name]]
+		}].concat(groups)
+	}
+
+	return groups.concat({
+		type: TERMINAL_TAG,
+		name: EOF_RULE
+	})
+}
+
+module.exports = source => augment_groups(source_lines_to_readable_groups(lines(source.trim())))
