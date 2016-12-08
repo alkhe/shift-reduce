@@ -51,18 +51,24 @@ const separate_progressions = (groups, progressions) => {
 	return [finished, unfinished]
 }
 
+const serialize_progression = ({ rule, production, symbol }) => `${ rule }.${ production },${ symbol }`
+const serialize_progressions = progressions => progressions.map(serialize_progression).join('|')
+const make_edge = (left, right) => `${ left }>${ right }`
+
 // Progression : (RuleIndex, ProductionIndex, SymbolIndex)
 // Production : (RuleIndex, ProductionIndex)
-const progressions_to_edges = (groups, progressions) => {
+const progressions_to_edges = (groups, progs) => {
+	const serial = serialize_progressions(progs)
 
-	let next_progressions = progressions
+	log('BASEPROG'.yellow, progs)
+
+	let next_progs = progs
 	const symbols = new Set
 
-	while (next_progressions.length > 0) {
-		let additional_progressions = []
+	while (next_progs.length > 0) {
+		let additional_progs = []
 
-		for (const { rule, production, symbol } of next_progressions) {
-			log('RULE'.yellow, rule, production, symbol)
+		for (const { rule, production, symbol } of next_progs) {
 			const p = groups[rule].productions[production]
 
 			if (symbol !== p.length) {
@@ -73,34 +79,41 @@ const progressions_to_edges = (groups, progressions) => {
 					symbols.add(next_symbol)
 
 					if (next_group.type === NONTERMINAL_ID) {
-						additional_progressions = additional_progressions.concat(make_fresh_progressions(next_group, next_symbol))
+						additional_progs = additional_progs.concat(make_fresh_progressions(next_group, next_symbol))
 					}
 				}
 			}
 		}
 
-		next_progressions = additional_progressions
-		progressions = progressions.concat(next_progressions)
+		progs = progs.concat(additional_progs)
+		next_progs = additional_progs
 	}
 
-	const [finished, unfinished] = separate_progressions(groups, progressions)
-
+	const [finished, unfinished] = separate_progressions(groups, progs)
 	const paths = initialize_paths(symbols)
 
-	for (const progression of unfinished) {
-		const { rule, production, symbol } = progression
+	log('FINISHED'.yellow, finished)
+
+	for (const prog of unfinished) {
+		const { rule, production, symbol } = prog
 		const s = groups[rule].productions[production][symbol]
 
-		paths.get(s).push(increment_progression(progression))
+		paths.get(s).push(increment_progression(prog))
 	}
 
-	log('NEXT PATHS'.green, paths)
+	log('PATHS'.cyan, paths)
 
-	for (const [symbol, progressions] of paths) {
-		progressions_to_edges(groups, progressions)
+	// let edges = finished.map(progression => make_edge(serial, serialize_progression(progression)))
+	let edges = []
+
+	for (const [symbol, next_progs] of paths) {
+		const [next_serial, next_edges] = progressions_to_edges(groups, next_progs)
+		edges = edges.concat(make_edge(serial, next_serial)).concat(next_edges)
 	}
 
-	return progressions
+	log('SERIAL'.green, serial)
+
+	return [serial, edges]
 }
 
 const edges = progressions_to_edges(
@@ -112,4 +125,4 @@ const edges = progressions_to_edges(
 	}))
 )
 
-// dir(logical_groups_to_automaton(logical_groups))
+log('EDGES'.green, edges)
