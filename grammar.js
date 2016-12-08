@@ -22,8 +22,6 @@ const [, logical_groups] = parse_groups(groups)
 log('LOGICAL'.cyan)
 dir(logical_groups)
 
-const get_group = (groups, id) => groups[id]
-
 const make_fresh_progressions = (group, rule) => group.productions.map((_, i) => ({
 	rule,
 	production: i,
@@ -46,13 +44,12 @@ const separate_progressions = (groups, progressions) => {
 
 	for (const prog of progressions) {
 		const { rule, production, symbol } = prog
-		const p = get_group(groups, rule).productions[production]
+		const p = groups[rule].productions[production]
 		; (symbol === p.length ? finished : unfinished).push(prog)
 	}
 
 	return [finished, unfinished]
 }
-
 
 // Progression : (RuleIndex, ProductionIndex, SymbolIndex)
 // Production : (RuleIndex, ProductionIndex)
@@ -66,11 +63,11 @@ const progressions_to_edges = (groups, progressions) => {
 
 		for (const { rule, production, symbol } of next_progressions) {
 			log('RULE'.yellow, rule, production, symbol)
-			const p = get_group(groups, rule).productions[production]
+			const p = groups[rule].productions[production]
 
 			if (symbol !== p.length) {
 				const next_symbol = p[symbol]
-				const next_group = get_group(groups, next_symbol)
+				const next_group = groups[next_symbol]
 
 				if (!symbols.has(next_symbol)) {
 					symbols.add(next_symbol)
@@ -92,7 +89,7 @@ const progressions_to_edges = (groups, progressions) => {
 
 	for (const progression of unfinished) {
 		const { rule, production, symbol } = progression
-		const s = get_group(groups, rule).productions[production][symbol]
+		const s = groups[rule].productions[production][symbol]
 
 		paths.get(s).push(increment_progression(progression))
 	}
@@ -108,7 +105,7 @@ const progressions_to_edges = (groups, progressions) => {
 
 const edges = progressions_to_edges(
 	logical_groups,
-	get_group(logical_groups, 0).productions.map((_, i) => ({
+	logical_groups[0].productions.map((_, i) => ({
 		rule: 0,
 		production: i,
 		symbol: 0
