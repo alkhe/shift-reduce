@@ -58,11 +58,7 @@ const make_edge = (left, right) => `${ left }>${ right }`
 // Progression : (RuleIndex, ProductionIndex, SymbolIndex)
 // Production : (RuleIndex, ProductionIndex)
 
-const edge_set = new Set
-
-const progressions_to_edges = (groups, progs) => {
-	const serial = serialize_progressions(progs)
-
+const progressions_to_edges = (groups, edge_set, serial, progs) => {
 	let next_progs = progs
 	const symbols = new Set
 
@@ -113,25 +109,37 @@ const progressions_to_edges = (groups, progs) => {
 	}
 
 	for (const [symbol, next_progs] of paths) {
-		const next_edge = make_edge(serial, serialize_progressions(next_progs))
+		const next_serial = serialize_progressions(next_progs)
+		const next_edge = make_edge(serial, next_serial)
+
 		if (!edge_set.has(next_edge)) {
 			edge_set.add(next_edge)
-			const [, next_edges] = progressions_to_edges(groups, next_progs)
+			const next_edges = progressions_to_edges(groups, edge_set, next_serial, next_progs)
 			edges = edges.concat(next_edge, next_edges)
 		}
 	}
 
-	return [serial, edges]
+	return edges
 }
 
-const [, edges] = progressions_to_edges(
-	logical_groups,
-	logical_groups[0].productions.map((_, i) => ({
+const groups_to_edges = groups => {
+	const root_progs = groups[0].productions.map((_, i) => ({
 		rule: 0,
 		production: i,
 		symbol: 0
 	}))
-)
+	
+	const root_serial = serialize_progressions(root_progs)
+	
+	return progressions_to_edges(
+		groups,
+		new Set,
+		root_serial,
+		root_progs
+	)
+}
+
+const edges = groups_to_edges(logical_groups)
 
 log('ELEN'.green, edges.length)
 log('UNIQUE ELEN'.green, Array.from(new Set(edges)).length)
