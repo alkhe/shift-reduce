@@ -89,12 +89,9 @@ const progressions_to_edges = (groups, progs) => {
 		next_progs = additional_progs
 	}
 
-	const [finished, unfinished] = separate_progressions(groups, progs)
 	const paths = initialize_paths(symbols)
 
-	log('FINISHED'.yellow, finished)
-
-	for (const prog of unfinished) {
+	for (const prog of progs) {
 		const { rule, production, symbol } = prog
 		const s = groups[rule].productions[production][symbol]
 
@@ -102,8 +99,6 @@ const progressions_to_edges = (groups, progs) => {
 	}
 
 	log('PATHS'.cyan, paths)
-
-	// let edges = finished.map(progression => make_edge(serial, serialize_progression(progression)))
 	let edges = []
 
 	for (const [symbol, next_progs] of paths) {
