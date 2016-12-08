@@ -1,5 +1,5 @@
 const { NONTERMINAL_ID, ACCEPT_RULE, END_NODE } = require('./constants')
-const { serialize_progression, serialize_progressions, serialize_edge } = require('./util')
+const { serialize_progression, serialize_progressions, serialize_edge, serialize_end_node } = require('./util')
 
 // Progression : (RuleIndex, ProductionIndex, SymbolIndex)
 
@@ -80,7 +80,8 @@ const progressions_to_edges = (edge_set, rules, serial, base_progs) => {
 	if (finished_length > 1) throw new Error('shift-reduce conflict')
 
 	if (finished_length === 1) {
-		const finished_edge = serialize_edge(serial, END_NODE)
+		const node = finished[0]
+		const finished_edge = serialize_edge(serial, serialize_end_node(node.rule, node.production))
 		if (!edge_set.has(finished_edge)) {
 			edge_set.add(finished_edge)
 		}

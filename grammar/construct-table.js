@@ -1,5 +1,5 @@
 const { EOF_RULE, END_NODE } = require('./constants')
-const { parse_progressions, parse_edge } = require('./util')
+const { parse_progressions, parse_edge, parse_end_node } = require('./util')
 
 const edge_set_to_string_edges = edge_set => {
 	const edges = []
@@ -17,13 +17,11 @@ const parse_string_edges = (lhs_to_index, rules, string_edges) => {
 	let index = 0
 
 	const add_node = node => {
-		if (!snode_to_node.has(node)) {
+		if (node[0] !== END_NODE && !snode_to_node.has(node)) {
 			snode_to_node.set(node, index)
 			index++
 		}
 	}
-
-	add_node(END_NODE)
 
 	const edges = []
 
@@ -32,15 +30,18 @@ const parse_string_edges = (lhs_to_index, rules, string_edges) => {
 		add_node(to)
 
 		const edge = {
-			from: snode_to_node.get(from),
-			to: snode_to_node.get(to)
+			from: snode_to_node.get(from)
 		}
 
-		if (to === END_NODE) {
+		if (to[0] === END_NODE) {
+			const [rule, production] = parse_end_node(to)
 			edge.end = true
+			edge.rule = rule
+			edge.production = production
 		} else {
-			const { rule, production, symbol }  = parse_progressions(to)[0]
+			const { rule, production, symbol } = parse_progressions(to)[0]
 
+			edge.to = snode_to_node.get(to)
 			edge.end = false
 			edge.symbol = rules[rule].productions[production][symbol - 1]
 		}
@@ -48,39 +49,36 @@ const parse_string_edges = (lhs_to_index, rules, string_edges) => {
 		edges.push(edge)
 	}
 
-	/*
-	const edges = string_edges.map(({ from, to }) => ({
-		from: parse_progressions(from),
-		to: to === END_NODE ? { rule: lhs_to_index.get(EOF_RULE) } : parse_progressions(to)
-	}))
-	*/
-
 	return [index, edges]
 }
 
 const dir = x => console.dir(x, { breakLength: 40, depth: null, colors: true })
 
 const edges_to_table = (lhs_to_index, rules, states, edges) => {
-	dir(edges)
-	// make (states - 1) * (rules.length - 1) matrix
+	// make states * (rules.length - 1) matrix
 	// for every state, consider every possible symbol
-	
-	// eof is a special rule, don't count as a state
 	// Accept is a special rule, don't count as a symbol
-	const table = Array(states - 1).fill(0)
-		.map(() => Array(rules.length - 1).fill('EE'))
+	const table = Array(states).fill(0)
+		.map(() => Array(rules.length - 1).fill('E   '))
 
 	for (const edge of edges) {
-		const row = table[edge.from - 1]
+		const row = table[edge.from]
 
 		if (edge.end) {
+			const { rule, production } = edge
+			const reduction = `r${ rule }.${ production }`
+
 			for (let i = 0; i < row.length; i++) {
-				if (row[i] === 'EE') {
-					row[i] = 'r '
+				if (row[i] === 'E   ') {
+					row[i] = reduction
 				}
 			}
+
+			if (rule === 0 && production === 0) {
+				row[lhs_to_index.get(EOF_RULE) - 1] = 'A   '
+			}
 		} else {
-			row[edge.symbol - 1] = `s${ edge.to }`
+			row[edge.symbol - 1] = `s${ edge.to }  `
 		}
 	}
 
